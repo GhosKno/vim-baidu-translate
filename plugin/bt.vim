@@ -36,7 +36,7 @@ try:
   import requests
   import json
   import sys
-except  ImportError:
+except ImportError:
   pass
 
 def str_decode(word):
@@ -61,8 +61,20 @@ class BaiduFanyi:
     parts_result = []
     if 'symbols' in dict_response["dict"]:
       parts = dict_response["dict"]["symbols"][0]["parts"]
-      parts_result = ''.join(('['+item['part'] + ''.join(item["means"])+']') for item in parts)
-    return '[target: %s], {smartResults: %s}' % (ret, parts_result) 
+      if dict_response['from'] == 'en':
+        parts_result = ''.join(('['+item['part'] + ';'.join(item["means"])+']') for item in parts)
+      elif dict_response['from'] == 'zh': 
+        #parts_result = ''.join(('['+item['text'] + ': '+ ''.join(item["means"])+']') for item in parts[0]['means'] if item['has_mean'] == '1')
+        for means_item in parts[0]['means']:
+          if type(means_item) == str:
+            parts_result.append('['+means_item+']')
+          elif 'text' in means_item and 'means' in means_item:
+            parts_result.append('['+means_item['text'] +':' + ';'.join(means_item["means"])+']')         
+    if len(parts_result) == 0:
+      parts_result = ''
+    else:
+      parts_result = '\n{'+''.join(parts_result)+'}'
+    return '[target: %s]' % ret + parts_result 
 
   def run(self):
     lang_detect_data = {"query":self.trans_str}
